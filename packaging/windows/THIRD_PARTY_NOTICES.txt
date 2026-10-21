@@ -1,0 +1,12 @@
+USwap Windows installer - third-party software
+
+USwap itself is MIT licensed (see LICENSE). The installer also ships these
+independent programs, which keep their own licenses. They are unmodified and
+are run as separate processes:
+
+  FFmpeg   https://ffmpeg.org           (GPL build from https://github.com/BtbN/FFmpeg-Builds)
+  Pandoc   https://pandoc.org           (GPL-2.0-or-later)
+  Poppler  https://poppler.freedesktop.org  (GPL, Windows build by oschwartz10612)
+
+Python, Pillow, watchdog and rich are bundled inside uswap.exe (PSF, HPND, Apache-2.0, MIT).
+Source code and license texts are available at the project pages above.

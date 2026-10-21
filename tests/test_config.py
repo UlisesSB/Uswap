@@ -45,3 +45,24 @@ def test_output_dir_modes(tmp_path):
 
 def test_config_dir_env_override(tmp_path):
     assert config_dir() == tmp_path / "cfg"
+
+
+def test_bundled_tools_added_to_path_when_frozen(tmp_path, monkeypatch):
+    import sys
+
+    from uswap.utils import system
+
+    exe = tmp_path / "app" / "uswap.exe"
+    (tmp_path / "app" / "tools").mkdir(parents=True)
+    exe.write_text("")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(exe))
+    monkeypatch.setenv("PATH", "/usr/bin")
+    assert system.add_bundled_tools_to_path() == (tmp_path / "app" / "tools").resolve()
+    assert str(tmp_path / "app" / "tools") in system.os.environ["PATH"].split(system.os.pathsep)
+
+
+def test_bundled_tools_noop_when_not_frozen():
+    from uswap.utils import system
+
+    assert system.add_bundled_tools_to_path() is None

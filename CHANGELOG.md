@@ -13,5 +13,6 @@ project uses [Semantic Versioning](https://semver.org/).
 - Magic-byte file type detection (images, audio, video, documents).
 - Engines: Pillow (images), FFmpeg (audio/video), Pandoc (documents), Poppler (PDF to text/images).
 - Configuration file, EN/ES interface, five color themes (Gruvbox, Nord, Catppuccin, Tokyo Night, Monokai).
-- Linux (Nautilus, Dolphin, Thunar, Nemo) and Windows Explorer context-menu installers.
+- Linux (Nautilus, Dolphin, Thunar, Nemo) and Windows Explorer context-menu installers (`scripts/menu-*`).
+- One-step installers: `install.sh` (Linux), `install.ps1` and `USwap-Setup.exe` (Windows, built by CI with FFmpeg/Pandoc/Poppler bundled).
 - Red logo assets and a reproducible generator (`scripts/make_assets.py`).

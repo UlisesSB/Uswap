@@ -18,6 +18,18 @@
   English &middot; <a href="README.es.md">Espa&ntilde;ol</a>
 </p>
 
+<div align="center">
+
+### Support the project
+
+USwap is free and open source. If it saves you time, you can help me keep improving it:
+
+**Bank alias (Argentina): `uarodriguez.wb`** &nbsp;&middot;&nbsp; Holder: Ulises Agustin Rodriguez
+
+<sub>Every contribution, big or small, is appreciated. A GitHub star or a bug report helps just as much.</sub>
+
+</div>
+
 ---
 
 ```text
@@ -41,21 +53,46 @@
 
 ## Install
 
-USwap needs **Python 3.10+**. The recommended way is [pipx](https://pipx.pypa.io/), which keeps it isolated and puts `uswap` on your `PATH`:
+### Windows
+
+**Option A - installer (easiest).** Download **`USwap-Setup.exe`** from the [Releases page](https://github.com/UlisesSB/uswap/releases), run it and click _Next_. It bundles everything (FFmpeg, Pandoc, Poppler), adds `uswap` to your PATH and adds _Convert with USwap_ to the right-click menu. No administrator rights needed.
+
+**Option B - from source, one command.** Clone the repo and run the installer script. It installs Python (if missing), USwap, the tools and the right-click entry:
+
+```powershell
+git clone https://github.com/UlisesSB/uswap.git
+cd uswap
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+### Linux
+
+One command after cloning. It installs FFmpeg/Pandoc/Poppler (asks before using `sudo`), USwap in a private virtualenv, the `uswap` command and the right-click entry for Nautilus, Dolphin, Thunar and Nemo:
 
 ```bash
 git clone https://github.com/UlisesSB/uswap.git
 cd uswap
-pipx install .
+./install.sh
 ```
 
-Or with plain pip: `pip install --user .`
+Options: `-y` (no questions), `--no-system-deps`, `--no-menus`. Supports `apt`, `dnf`, `pacman` and `zypper`.
 
-> Once published to PyPI this becomes simply `pipx install uswap`.
+### Uninstall
 
-### External tools (optional, per format family)
+- Windows: _Settings > Apps > USwap > Uninstall_ (installer), or `install.ps1 -Uninstall`.
+- Linux: `./install.sh --uninstall`
 
-Images work out of the box. Install the rest only for the formats you need:
+### Manual install (any OS)
+
+If you prefer to manage things yourself, USwap is a normal Python package (3.10+):
+
+```bash
+pipx install .        # or: pip install --user .
+```
+
+### External tools (only for manual installs)
+
+The installers above take care of these. Images work out of the box; for the rest install what you need:
 
 | Tool    | Enables            | Debian/Ubuntu                    | Fedora                           | Arch                     | Windows                                |
 | ------- | ------------------ | -------------------------------- | -------------------------------- | ------------------------ | -------------------------------------- |
@@ -65,23 +102,9 @@ Images work out of the box. Install the rest only for the formats you need:
 
 Run `uswap --doctor` at any time to see what is available.
 
-### Right-click menu integration
+### Right-click menu
 
-**Linux** (Nautilus, Dolphin, Thunar, Nemo):
-
-```bash
-./scripts/install.sh            # use --all to force every file manager
-./scripts/install.sh --uninstall
-```
-
-**Windows** (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
-```
-
-Details and caveats: [docs/CONTEXT_MENUS.md](docs/CONTEXT_MENUS.md).
+The installers add it automatically. To (re)install or remove it by hand see [docs/CONTEXT_MENUS.md](docs/CONTEXT_MENUS.md).
 
 ## Usage
 
@@ -149,14 +172,24 @@ Stored in `~/.config/uswap/config.json` (Linux) or `%APPDATA%\uswap\config.json`
 - DOCX/ODT to PDF (via LibreOffice, optional)
 - HEIC/AVIF input, animated GIF to video
 - Per-format quality presets
-- Packaged builds (PyPI, AUR, winget, Scoop)
+- More packages: PyPI, AUR, winget, Scoop, `.deb`
 
 ## Contributing
 
 Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
+## Author
+
+Made by **YOUR NAME**.
+
+- Portfolio: [uarodriguez.com](https://uarodriguez.com)
+- GitHub: [@UlisesSB](https://github.com/UlisesSB)
+- Email: [uarodriguez@computer.org](mailto:uarodriguez@computer.org)
+
+If USwap is useful to you, consider [supporting the project](#support-the-project).
+
 ## License
 
-[MIT](LICENSE) &copy; 2026 Ulises Agustin Rodriguez
+[MIT](LICENSE) &copy; 2026 YOUR NAME
 
-<p align="center"><sub>Made by <a href="https://github.com/UlisesSB">UlisesSB</a> &middot; <a href="mailto:uarodriguez@computer.org">uarodriguez@computer.org</a></sub></p>
+<p align="center"><sub>Built by <a href="https://uarodriguez.com">uarodriguez.com</a></sub></p>

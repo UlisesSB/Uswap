@@ -1,13 +1,13 @@
 # Context-menu integration
 
-Both installers are **per-user**: no administrator rights, nothing outside your home/profile.
+The main installers (`install.sh`, `install.ps1`, `USwap-Setup.exe`) already do all of this. This page explains what they set up and how to manage it by hand. Everything is **per-user**: no administrator rights, nothing outside your home/profile.
 
 ## Linux
 
 ```bash
-./scripts/install.sh              # file managers found on this machine
-./scripts/install.sh --all        # all supported ones
-./scripts/install.sh --uninstall
+./scripts/menu-linux.sh              # file managers found on this machine
+./scripts/menu-linux.sh --all        # all supported ones
+./scripts/menu-linux.sh --uninstall
 ```
 
 File managers start programs without a terminal, so the script creates a launcher, `~/.local/bin/uswap-popup`, that opens a terminal emulator and runs `uswap` in it. It uses `$TERMINAL` if set, otherwise the first of: `x-terminal-emulator`, `gnome-terminal`, `konsole`, `xfce4-terminal`, `mate-terminal`, `kitty`, `alacritty`, `foot`, `wezterm`, `lxterminal`, `xterm`.
@@ -26,8 +26,8 @@ If you use another terminal, set it in your shell profile: `export TERMINAL=kitt
 ## Windows
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
+powershell -ExecutionPolicy Bypass -File scripts\menu-windows.ps1
+powershell -ExecutionPolicy Bypass -File scripts\menu-windows.ps1 -Uninstall
 ```
 
 Writes `HKCU\Software\Classes\*\shell\USwap` with the command `"<path>\uswap.exe" "%1"` and copies the icon to `%LOCALAPPDATA%\uswap`. `uswap.exe` is a console program, so Explorer opens a console window for it.

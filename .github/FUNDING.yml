@@ -1,0 +1,6 @@
+# Shows a "Sponsor" button on the repository page.
+# Uncomment and fill what applies (https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository)
+# github: YOUR-USER
+# ko_fi: your-user
+# buy_me_a_coffee: your-user
+custom: ["https://uarodriguez.com"]

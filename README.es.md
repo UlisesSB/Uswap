@@ -11,6 +11,18 @@
   <a href="README.md">English</a> &middot; Espa&ntilde;ol
 </p>
 
+<div align="center">
+
+### Apoya el proyecto
+
+USwap es gratuito y de código abierto. Si te ahorra tiempo, puedes ayudarme a seguir mejorándolo:
+
+**Alias bancario (Argentina): `uarodriguez.wb`** &nbsp;&middot;&nbsp; Titular: Ulises Agustin Rodriguez
+
+<sub>Cualquier aporte, grande o chico, se agradece. Una estrella en GitHub o reportar un error ayuda igual.</sub>
+
+</div>
+
 ---
 
 ```text
@@ -24,53 +36,48 @@
 
 ## ¿Por qué USwap?
 
-* **Clic derecho, eliges y listo.** Se abre una mini terminal desde tu gestor de archivos, pulsas un número, se convierte y se cierra sola.
-* **Una TUI completa cuando la necesitas.** Explora carpetas, convierte por lotes con barras de progreso y vigila una carpeta para convertir lo que llegue.
-* **Pensado para el teclado.** Flechas *y* teclas Vim (`j`/`k`, `g`/`G`, `/` para buscar, `Esc`).
-* **Detecta el tipo real.** Usa *magic bytes*, no solo la extensión: un PNG renombrado a `.jpg` sigue siendo un PNG.
-* **Privado.** Todo se ejecuta en local con Pillow, FFmpeg, Pandoc y Poppler.
-* **Automatizable.** `uswap foto.heic --to jpg` funciona sin interfaz.
-* **Estética limpia.** Sin emojis; glifos Unicode discretos (o ASCII puro) y cinco temas: Gruvbox, Nord, Catppuccin, Tokyo Night y Monokai.
+- **Clic derecho, eliges y listo.** Se abre una mini terminal desde tu gestor de archivos, pulsas un número, se convierte y se cierra sola.
+- **Una TUI completa cuando la necesitas.** Explora carpetas, convierte por lotes con barras de progreso y vigila una carpeta para convertir lo que llegue.
+- **Pensado para el teclado.** Flechas _y_ teclas Vim (`j`/`k`, `g`/`G`, `/` para buscar, `Esc`).
+- **Detecta el tipo real.** Usa _magic bytes_, no solo la extensión: un PNG renombrado a `.jpg` sigue siendo un PNG.
+- **Privado.** Todo se ejecuta en local con Pillow, FFmpeg, Pandoc y Poppler.
+- **Automatizable.** `uswap foto.heic --to jpg` funciona sin interfaz.
+- **Estética limpia.** Sin emojis; glifos Unicode discretos (o ASCII puro) y cinco temas: Gruvbox, Nord, Catppuccin, Tokyo Night y Monokai.
 
 ## Instalación
 
-Necesitas **Python 3.10+**. Lo recomendado es [pipx](https://pipx.pypa.io/), que lo aísla y deja `uswap` en tu `PATH`:
+### Windows
 
-```bash
-git clone https://github.com/YOUR-USER/uswap.git
-cd uswap
-pipx install .
-```
+**Opción A - instalador (la más fácil).** Descarga **`USwap-Setup.exe`** desde la [página de Releases](https://github.com/UlisesSB/uswap/releases), ábrelo y pulsa _Siguiente_. Incluye todo (FFmpeg, Pandoc, Poppler), añade `uswap` al PATH y agrega _Convert with USwap_ al clic derecho. No necesita permisos de administrador.
 
-O con pip: `pip install --user .`
-
-### Herramientas externas (opcionales)
-
-Las imágenes funcionan sin instalar nada más. Instala el resto solo para los formatos que necesites:
-
-| Herramienta | Habilita | Debian/Ubuntu | Windows |
-|-------------|----------|---------------|---------|
-| FFmpeg | audio y vídeo | `sudo apt install ffmpeg` | `winget install Gyan.FFmpeg` |
-| Pandoc | documentos | `sudo apt install pandoc` | `winget install JohnMacFarlane.Pandoc` |
-| Poppler | PDF a texto/imágenes | `sudo apt install poppler-utils` | `scoop install poppler` |
-
-Ejecuta `uswap --doctor` para ver qué tienes instalado (más distros en el [README en inglés](README.md#install)).
-
-### Menú contextual (clic derecho)
-
-**Linux** (Nautilus, Dolphin, Thunar, Nemo):
-
-```bash
-./scripts/install.sh            # --all para instalar en todos
-./scripts/install.sh --uninstall
-```
-
-**Windows** (PowerShell):
+**Opción B - desde el código, un solo comando.** Clona el repo y ejecuta el script. Instala Python (si falta), USwap, las herramientas y la entrada del clic derecho:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
+git clone https://github.com/UlisesSB/uswap.git
+cd uswap
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
+
+### Linux
+
+Un solo comando tras clonar. Instala FFmpeg/Pandoc/Poppler (pregunta antes de usar `sudo`), USwap en un entorno virtual propio, el comando `uswap` y la entrada del clic derecho para Nautilus, Dolphin, Thunar y Nemo:
+
+```bash
+git clone https://github.com/UlisesSB/uswap.git
+cd uswap
+./install.sh
+```
+
+Opciones: `-y` (sin preguntas), `--no-system-deps`, `--no-menus`. Soporta `apt`, `dnf`, `pacman` y `zypper`.
+
+### Desinstalar
+
+- Windows: _Configuración > Aplicaciones > USwap > Desinstalar_ (instalador), o `install.ps1 -Uninstall`.
+- Linux: `./install.sh --uninstall`
+
+### Instalación manual (cualquier sistema)
+
+USwap es un paquete de Python normal (3.10+): `pipx install .` o `pip install --user .`. En ese caso instala tú FFmpeg, Pandoc y Poppler y comprueba con `uswap --doctor`.
 
 ## Uso
 
@@ -102,12 +109,20 @@ Se guarda en `~/.config/uswap/config.json` (Linux) o `%APPDATA%\uswap\config.jso
 
 La documentación técnica completa (en inglés) está en [`docs/`](docs/): instalación, uso, configuración, menús contextuales, arquitectura y guía de desarrollo.
 
+## Autor
+
+Hecho por **YOUR NAME**.
+
+- Portafolio: [uarodriguez.com](https://uarodriguez.com)
+- GitHub: [@UlisesSB](https://github.com/UlisesSB)
+- Correo: [uarodriguez@computer.org](mailto:uarodriguez@computer.org)
+
 ## Contribuir
 
-Los *issues* y *pull requests* son bienvenidos. Lee antes [CONTRIBUTING.md](CONTRIBUTING.md).
+Los _issues_ y _pull requests_ son bienvenidos. Lee antes [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia
 
 [MIT](LICENSE) &copy; 2026 YOUR NAME
 
-<p align="center"><sub>Hecho por <a href="https://github.com/YOUR-USER">YOUR NAME</a> &middot; <a href="mailto:you@example.com">you@example.com</a></sub></p>
+<p align="center"><sub>Creado por <a href="https://uarodriguez.com">uarodriguez.com</a></sub></p>

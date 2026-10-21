@@ -3,14 +3,36 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
 
 IS_WINDOWS = sys.platform == "win32"
+
+
+def add_bundled_tools_to_path() -> Path | None:
+    """In the packaged Windows build, FFmpeg/Pandoc/Poppler live in ``<app>\\tools``.
+
+    Prepending that folder to PATH lets every engine find them with ``shutil.which``.
+    Returns the folder that was added (None when not running a packaged build).
+    """
+    if not getattr(sys, "frozen", False):
+        return None
+    tools = Path(sys.executable).resolve().parent / "tools"
+    if tools.is_dir():
+        current = os.environ.get("PATH", "")
+        if str(tools) not in current.split(os.pathsep):
+            os.environ["PATH"] = str(tools) + os.pathsep + current
+        return tools
+    return None
+
+
+add_bundled_tools_to_path()
 
 
 @dataclass(frozen=True)
