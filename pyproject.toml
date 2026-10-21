@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uswap"
+version = "0.1.0"
+description = "Lightweight, keyboard-driven file converter for the terminal (Windows & Linux)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "YOUR NAME", email = "you@example.com" }]
+keywords = ["converter", "cli", "tui", "ffmpeg", "pandoc", "pillow", "terminal"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "rich>=13.0",
+    "pillow>=10.0",
+    "watchdog>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://github.com/YOUR-USER/uswap"
+Issues = "https://github.com/YOUR-USER/uswap/issues"
+
+[project.scripts]
+uswap = "uswap.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["uswap*"]
+
+[tool.setuptools.package-data]
+uswap = ["locales/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

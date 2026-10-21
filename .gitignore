@@ -1,0 +1,88 @@
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+wheels/
+.installed.cfg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test / lint / coverage caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# ---------------------------------------------------------------------------
+# AI coding assistants (Claude Code, Cursor, Gemini, Copilot, Aider, ...)
+# Keep prompts, specs and agent state out of the public repository.
+# ---------------------------------------------------------------------------
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.cursor/
+.cursorrules
+.cursorignore
+.cursorindexingignore
+.windsurf/
+.windsurfrules
+.aider*
+.continue/
+.codeium/
+.gemini/
+GEMINI.md
+.github/copilot-instructions.md
+.ai/
+.agents/
+AGENTS.md
+*Prompt_para_Cursor*
+Documentación_y_Prompt_*.md
+specs/
+.superpowers/
+
+# ---------------------------------------------------------------------------
+# Editors / IDEs
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ---------------------------------------------------------------------------
+# OS junk
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ---------------------------------------------------------------------------
+# USwap runtime / local files
+# ---------------------------------------------------------------------------
+config.json
+*.bak
+*.tmp
+.uswap-*/
+scratch/
+tmp/
