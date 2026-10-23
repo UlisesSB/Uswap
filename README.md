@@ -190,6 +190,6 @@ If USwap is useful to you, consider [supporting the project](#support-the-projec
 
 ## License
 
-[MIT](LICENSE) &copy; 2026 YOUR NAME
+[MIT](LICENSE) &copy; 2026 Ulises Agustin Rodriguez
 
 <p align="center"><sub>Built by <a href="https://uarodriguez.com">uarodriguez.com</a></sub></p>
