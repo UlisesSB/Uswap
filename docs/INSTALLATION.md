@@ -28,7 +28,7 @@ The rest of this page covers manual installation.
 ### With pipx (recommended)
 
 ```bash
-git clone https://github.com/YOUR-USER/uswap.git
+git clone https://github.com/UlisesSB/uswap.git
 cd uswap
 pipx install .
 uswap --version

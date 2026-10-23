@@ -1,44 +1,58 @@
 <#
 Downloads FFmpeg, Pandoc and Poppler for Windows and flattens their executables
-into build\tools so the installer can ship them. Used by the release workflow.
-Requires the GitHub CLI (`gh`, preinstalled on GitHub runners) with GH_TOKEN set.
+into build\tools so the installer can ship them.
+
+Uses only the public GitHub API (no GitHub CLI needed). If GH_TOKEN / GITHUB_TOKEN is
+set (as on GitHub Actions) it is used to avoid API rate limits.
 #>
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'   # makes Invoke-WebRequest much faster on Windows PowerShell 5.1
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 $root  = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $work  = Join-Path $root 'build\downloads'
 $tools = Join-Path $root 'build\tools'
 Remove-Item $work, $tools -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $work, $tools | Out-Null
 
-function Get-Release($repo, $pattern, $tag) {
-    $ghArgs = @('release', 'download')
-    if ($tag) { $ghArgs += $tag }
-    $ghArgs += @('--repo', $repo, '--pattern', $pattern, '--dir', $work)
-    & gh @ghArgs
-    if ($LASTEXITCODE -ne 0) { throw "download failed: $repo $pattern" }
+$headers = @{ 'User-Agent' = 'uswap-build'; 'Accept' = 'application/vnd.github+json' }
+$token = if ($env:GH_TOKEN) { $env:GH_TOKEN } else { $env:GITHUB_TOKEN }
+if ($token) { $headers['Authorization'] = "Bearer $token" }
+
+# Download the first asset of a GitHub release whose name matches the wildcard $pattern.
+function Get-ReleaseAsset([string]$repo, [string]$pattern, [string]$tag) {
+    $url = if ($tag) { "https://api.github.com/repos/$repo/releases/tags/$tag" } else { "https://api.github.com/repos/$repo/releases/latest" }
+    Write-Host "  $repo ($pattern)"
+    $release = Invoke-RestMethod -Uri $url -Headers $headers
+    $asset = $release.assets | Where-Object { $_.name -like $pattern } | Select-Object -First 1
+    if (-not $asset) {
+        $names = ($release.assets | ForEach-Object { $_.name }) -join ', '
+        throw "No asset matching '$pattern' in $repo. Available: $names"
+    }
+    $dest = Join-Path $work $asset.name
+    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $dest -Headers @{ 'User-Agent' = 'uswap-build' }
+    return $dest
 }
 
+Write-Host 'Downloading tools...'
+
 # FFmpeg (GPL build: needed for libx264 / libvpx / libopus / libvorbis / libmp3lame)
-Get-Release 'BtbN/FFmpeg-Builds' 'ffmpeg-master-latest-win64-gpl.zip' 'latest'
-Expand-Archive (Join-Path $work 'ffmpeg-master-latest-win64-gpl.zip') -DestinationPath (Join-Path $work 'ffmpeg') -Force
+$zip = Get-ReleaseAsset 'BtbN/FFmpeg-Builds' 'ffmpeg-master-latest-win64-gpl.zip' 'latest'
+Expand-Archive $zip -DestinationPath (Join-Path $work 'ffmpeg') -Force
 Get-ChildItem (Join-Path $work 'ffmpeg') -Recurse -Include ffmpeg.exe, ffprobe.exe | Copy-Item -Destination $tools
 
 # Pandoc
-Get-Release 'jgm/pandoc' 'pandoc-*-windows-x86_64.zip' $null
-Get-ChildItem $work -Filter 'pandoc-*-windows-x86_64.zip' | ForEach-Object {
-    Expand-Archive $_.FullName -DestinationPath (Join-Path $work 'pandoc') -Force
-}
+$zip = Get-ReleaseAsset 'jgm/pandoc' 'pandoc-*-windows-x86_64.zip' $null
+Expand-Archive $zip -DestinationPath (Join-Path $work 'pandoc') -Force
 Get-ChildItem (Join-Path $work 'pandoc') -Recurse -Filter pandoc.exe | Copy-Item -Destination $tools
 
 # Poppler (pdftoppm, pdftotext + the DLLs they need)
-Get-Release 'oschwartz10612/poppler-windows' 'Release-*.zip' $null
-Get-ChildItem $work -Filter 'Release-*.zip' | ForEach-Object {
-    Expand-Archive $_.FullName -DestinationPath (Join-Path $work 'poppler') -Force
-}
+$zip = Get-ReleaseAsset 'oschwartz10612/poppler-windows' 'Release-*.zip' $null
+Expand-Archive $zip -DestinationPath (Join-Path $work 'poppler') -Force
 $popplerBin = Get-ChildItem (Join-Path $work 'poppler') -Recurse -Filter pdftoppm.exe | Select-Object -First 1
 Copy-Item (Join-Path $popplerBin.DirectoryName '*') -Destination $tools -Recurse -Force
 
-Write-Host 'Tools ready:'
+Write-Host 'Tools ready in build\tools:'
 Get-ChildItem $tools -Filter *.exe | ForEach-Object { Write-Host "  $($_.Name)" }
 foreach ($need in 'ffmpeg.exe', 'ffprobe.exe', 'pandoc.exe', 'pdftoppm.exe', 'pdftotext.exe') {
     if (-not (Test-Path (Join-Path $tools $need))) { throw "missing $need in build\tools" }

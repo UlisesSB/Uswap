@@ -10,9 +10,9 @@
 AppId={{B7D0F2C4-5A2E-4C6B-9A31-0A5F00000001}
 AppName=USwap
 AppVersion={#AppVersion}
-AppPublisher=YOUR NAME
+AppPublisher=Ulises Agustín Rodríguez
 AppPublisherURL=https://uarodriguez.com
-AppSupportURL=https://github.com/YOUR-USER/uswap/issues
+AppSupportURL=https://github.com/UlisesSB/uswap/issues
 DefaultDirName={autopf}\USwap
 DefaultGroupName=USwap
 DisableProgramGroupPage=yes

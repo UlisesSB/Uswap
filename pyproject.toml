@@ -1,60 +1,81 @@
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+# Installation
 
-[project]
-name = "uswap"
-version = "0.1.0"
-description = "Lightweight, keyboard-driven file converter for the terminal (Windows & Linux)."
-readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "MIT" }
-authors = [{ name = "YOUR NAME", email = "you@example.com" }]
-keywords = ["converter", "cli", "tui", "ffmpeg", "pandoc", "pillow", "terminal"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Environment :: Console",
-    "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Multimedia",
-    "Topic :: Utilities",
-]
-dependencies = [
-    "rich>=13.0",
-    "pillow>=10.0",
-    "watchdog>=3.0",
-]
+## Quick install
 
-[project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.5"]
+| System | Command |
+|--------|---------|
+| Windows (installer) | download `USwap-Setup.exe` from the Releases page and run it |
+| Windows (source) | `powershell -ExecutionPolicy Bypass -File install.ps1` |
+| Linux | `./install.sh` |
 
-[project.urls]
-Homepage = "https://github.com/YOUR-USER/uswap"
-Issues = "https://github.com/YOUR-USER/uswap/issues"
-Author = "https://uarodriguez.com"
+Both scripts install the dependencies, the `uswap` command and the right-click entry. Flags: Linux `-y`, `--no-system-deps`, `--no-menus`, `--uninstall`; Windows `-NoSystemDeps`, `-NoMenu`, `-Uninstall`.
 
-[project.scripts]
-uswap = "uswap.cli:main"
+What the scripts do:
 
-[tool.setuptools.packages.find]
-include = ["uswap*"]
+* **Linux** - installs FFmpeg/Pandoc/Poppler via apt, dnf, pacman or zypper (asks before `sudo`), creates a virtualenv in `~/.local/share/uswap/venv`, links `~/.local/bin/uswap`, then runs `scripts/menu-linux.sh`.
+* **Windows** - installs Python 3.12 with winget if needed, creates a virtualenv in `%LOCALAPPDATA%\uswap\venv`, adds `%LOCALAPPDATA%\uswap\bin` to your user PATH, installs the tools with winget, then runs `scripts\menu-windows.ps1`. Open a new terminal afterwards so PATH changes apply.
+* **USwap-Setup.exe** - a self-contained Inno Setup installer built by the release workflow. It ships `uswap.exe` (PyInstaller) with FFmpeg, Pandoc and Poppler in `tools\`, so no Python is needed. Per-user install, optional PATH and right-click tasks.
 
-[tool.setuptools.package-data]
-uswap = ["locales/*.json"]
+The rest of this page covers manual installation.
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
+## Requirements
 
-[tool.ruff]
-line-length = 100
-target-version = "py310"
+* Python **3.10 or newer** (Windows or Linux)
+* A terminal with Unicode support (any modern one). For legacy terminals set *Settings > Symbols > ASCII only*.
 
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
-ignore = ["E501"]
+## Install USwap
+
+### With pipx (recommended)
+
+```bash
+git clone https://github.com/UlisesSB/uswap.git
+cd uswap
+pipx install .
+uswap --version
+```
+
+Upgrade after pulling changes: `pipx install --force .`
+
+### With pip
+
+```bash
+pip install --user .
+```
+
+Make sure the scripts directory is on your `PATH` (`~/.local/bin` on Linux, `%APPDATA%\Python\Python3xx\Scripts` on Windows).
+
+### From a virtual environment (development)
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+## External tools
+
+USwap shells out to well-known tools. All are optional; a missing tool only disables the formats that need it.
+
+| Tool | Needed for | Binary names |
+|------|-----------|--------------|
+| FFmpeg | audio, video | `ffmpeg`, `ffprobe` |
+| Pandoc | MD, TXT, HTML, DOCX, ODT, RTF, EPUB | `pandoc` |
+| Poppler | PDF to TXT / PNG / JPG | `pdftotext`, `pdftoppm` |
+
+Install commands per platform are in the [README](../README.md#external-tools-optional-per-format-family). Check the result with:
+
+```bash
+uswap --doctor
+```
+
+## Context menus
+
+See [CONTEXT_MENUS.md](CONTEXT_MENUS.md).
+
+## Uninstall
+
+```bash
+./install.sh --uninstall              # Linux: program, venv and menu entries
+```
+
+Windows: *Settings > Apps > USwap* (installer) or `install.ps1 -Uninstall`. Manual installs: `pipx uninstall uswap`. Your settings file is left in place; delete the `uswap` config folder to remove it.

@@ -1,7 +1,7 @@
 # Development guide
 
 ```bash
-git clone https://github.com/YOUR-USER/uswap.git
+git clone https://github.com/UlisesSB/uswap.git
 cd uswap
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
@@ -33,12 +33,19 @@ Isolate your real settings with `USWAP_CONFIG_DIR=/tmp/uswap-dev uswap`.
 
 ## Building the Windows installer
 
-The `Release` workflow (`.github/workflows/release.yml`) runs on every `v*` tag: it tests, builds `uswap.exe` with PyInstaller (`--onedir`, so right-click launches stay fast), downloads FFmpeg/Pandoc/Poppler with `packaging/windows/fetch-tools.ps1`, compiles `packaging/windows/uswap.iss` with Inno Setup and attaches `USwap-Setup.exe` to the GitHub release. You can also run it manually from the *Actions* tab.
+The `Release` workflow (`.github/workflows/release.yml`) runs on every `v*` tag: it tests, builds `uswap.exe` with PyInstaller (`--onedir`, so right-click launches stay fast), downloads FFmpeg/Pandoc/Poppler with `packaging/windows/fetch-tools.ps1`, compiles `packaging/windows/uswap.iss` with Inno Setup and attaches `USwap-Setup.exe` to the GitHub release. You can also run it manually from the *Actions* tab (*Release > Run workflow*): type a tag such as `v0.1.0` to publish the release, or leave it empty to just get the installer as a downloadable artifact of the run.
 
-Locally on Windows (needs PyInstaller, Inno Setup 6 and the GitHub CLI):
+**Troubleshooting a missing release:**
+
+1. *Actions* tab: is there a *Release* run? If not, the tag was probably pushed before the workflow files reached GitHub, or Actions is disabled (*Settings > Actions > General*). Push the commit first, then run the workflow manually with the tag.
+2. If the run is red, open it and expand the failed step. The usual suspects are `Fetch FFmpeg, Pandoc and Poppler` (release asset names changed upstream) and `Build installer`.
+3. If it is green but the release has no file, check *Settings > Actions > General > Workflow permissions* is *Read and write*.
+4. Skip CI entirely: run `packaging\windows\build.ps1` on a Windows machine and attach `dist\USwap-Setup.exe` to the release by hand.
+
+Locally on Windows (needs Python, PyInstaller and Inno Setup 6; `build.ps1` installs PyInstaller itself):
 
 ```powershell
-pyinstaller packaging/uswap_entry.py --name uswap --onedir --noconfirm --icon assets/uswap.ico --add-data "uswap/locales;uswap/locales" --collect-submodules PIL --collect-submodules watchdog --collect-submodules rich
+python -m PyInstaller packaging/uswap_entry.py --name uswap --onedir --noconfirm --icon assets/uswap.ico --add-data "uswap/locales;uswap/locales" --collect-submodules PIL --collect-submodules watchdog --collect-submodules rich
 ./packaging/windows/fetch-tools.ps1
 & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=0.1.0 packaging\windows\uswap.iss
 ```

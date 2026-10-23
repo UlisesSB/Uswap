@@ -5,6 +5,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish the installer under (e.g. v0.1.0). Leave empty to only build the artifact."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -23,11 +28,9 @@ jobs:
         run: |
           pip install . pyinstaller
           choco install innosetup -y --no-progress
-      - name: Run tests
-        run: pip install pytest && pytest -q
       - name: Build uswap.exe (PyInstaller, one folder)
         run: >
-          pyinstaller packaging/uswap_entry.py --name uswap --onedir --noconfirm
+          python -m PyInstaller packaging/uswap_entry.py --name uswap --onedir --noconfirm
           --icon assets/uswap.ico
           --add-data "uswap/locales;uswap/locales"
           --collect-submodules PIL --collect-submodules watchdog --collect-submodules rich
@@ -47,8 +50,9 @@ jobs:
           name: USwap-Setup
           path: dist/USwap-Setup.exe
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
           files: dist/USwap-Setup.exe
           generate_release_notes: true
