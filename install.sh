@@ -1,150 +1,212 @@
 #!/usr/bin/env bash
-# USwap - one-step installer for Linux
+# USwap installer for Linux
 #
-#   git clone https://github.com/YOUR-USER/uswap.git && cd uswap && ./install.sh
+#   git clone https://github.com/UlisesSB/USwap.git && cd USwap && ./install.sh
 #
-# What it does (per-user, sudo only for system packages):
-#   1. installs FFmpeg, Pandoc and Poppler with your package manager (asks first)
-#   2. creates a private virtualenv in ~/.local/share/uswap and installs USwap
-#   3. links the `uswap` command into ~/.local/bin
-#   4. adds "Convert with USwap" to your file manager's right-click menu
+# 1. installs Python 3, FFmpeg, Pandoc and Poppler with your package manager (sudo)
+# 2. copies uswap to ~/.local/share/uswap and links the `uswap` command in ~/.local/bin
+# 3. adds "Convert with USwap" to the right-click menu (Nautilus, Nemo, Dolphin, Thunar)
 #
-# Options:
-#   -y, --yes            do not ask questions (install system packages with sudo)
-#   --no-system-deps     skip FFmpeg/Pandoc/Poppler (images only)
-#   --no-menus           skip the right-click menu entries
-#   --uninstall          remove USwap, its venv and the menu entries
-#   -h, --help           show this help
+# No pip, no virtualenv: USwap only uses the Python standard library.
+#
+#   ./install.sh              install or update
+#   ./install.sh -y           do not ask before installing system packages
+#   ./install.sh --uninstall  remove everything this script created
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/uswap"
-VENV="$APP_HOME/venv"
-BIN_DIR="$HOME/.local/bin"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+APP="$DATA/uswap"
+BIN="$HOME/.local/bin"
+LAUNCHER="$APP/open-in-terminal"
+ICON="$DATA/icons/hicolor/256x256/apps/uswap.png"
+DESKTOP="$DATA/applications/uswap.desktop"
+LABEL="Convert with USwap"
+NAUTILUS="$DATA/nautilus/scripts/$LABEL"
+NEMO="$DATA/nemo/actions/uswap.nemo_action"
+DOLPHIN="$DATA/kio/servicemenus/uswap.desktop"
+THUNAR="${XDG_CONFIG_HOME:-$HOME/.config}/Thunar/uca.xml"
 
-ASSUME_YES=0; SYSTEM_DEPS=1; MENUS=1; UNINSTALL=0
+YES=0; UNINSTALL=0
 for arg in "$@"; do
   case "$arg" in
-    -y|--yes) ASSUME_YES=1 ;;
-    --no-system-deps) SYSTEM_DEPS=0 ;;
-    --no-menus) MENUS=0 ;;
+    -y|--yes) YES=1 ;;
     --uninstall) UNINSTALL=1 ;;
-    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
+    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "unknown option: $arg (try --help)" >&2; exit 2 ;;
   esac
 done
 
-if [ -t 1 ]; then RED=$'\033[1;31m'; DIM=$'\033[2m'; RST=$'\033[0m'; else RED=""; DIM=""; RST=""; fi
-step() { printf '%s==>%s %s\n' "$RED" "$RST" "$*"; }
-info() { printf '    %s\n' "$*"; }
+if [ -t 1 ]; then R=$'\033[38;2;232;50;63m'; A=$'\033[38;2;255;181;71m'; D=$'\033[2m'; N=$'\033[0m'
+else R=""; A=""; D=""; N=""; fi
+step() { printf '%s►%s %s\n' "$R" "$N" "$*"; }
+info() { printf '  %s%s%s\n' "$D" "$*" "$N"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
-ask() {  # ask "question" -> 0 for yes
-  [ "$ASSUME_YES" = 1 ] && return 0
-  [ -t 0 ] || return 1
-  local reply; read -r -p "    $1 [Y/n] " reply
-  case "$reply" in ""|y|Y|yes|YES|s|S|si|SI) return 0 ;; *) return 1 ;; esac
+remove_thunar() {
+  [ -f "$THUNAR" ] && grep -q 'uswap:begin' "$THUNAR" || return 0
+  awk '/<!-- uswap:begin -->/{s=1} !s{print} /<!-- uswap:end -->/{s=0}' "$THUNAR" > "$THUNAR.tmp"
+  mv "$THUNAR.tmp" "$THUNAR"
 }
 
-# ---------------------------------------------------------------- uninstall
 if [ "$UNINSTALL" = 1 ]; then
   step "Removing USwap"
-  [ -x "$REPO_DIR/scripts/menu-linux.sh" ] && "$REPO_DIR/scripts/menu-linux.sh" --uninstall || true
-  rm -f "$BIN_DIR/uswap"
-  rm -rf "$APP_HOME"
-  info "done. Your settings (~/.config/uswap) were kept; system packages were not touched."
+  rm -rf "$APP"
+  rm -f "$BIN/uswap" "$ICON" "$DESKTOP" "$NAUTILUS" "$NEMO" "$DOLPHIN"
+  remove_thunar
+  info "done. FFmpeg, Pandoc and Poppler were left installed."
   exit 0
 fi
 
-# ------------------------------------------------------------------- python
-step "Checking Python"
-PM=""
-for c in apt-get dnf pacman zypper; do have "$c" && { PM="$c"; break; }; done
+printf '\n%s  █  █ ▄▀▀▀▀%s    USwap installer\n' "$R" "$N"
+printf '%s  █  █ ▀▀▀▀▄%s    %sno pip, no virtualenv%s\n' "$R" "$N" "$D" "$N"
+printf '%s  ▀▄▄▀ ▄▄▄▄▀%s\n%s  ─────────►%s\n%s  ◄─────────%s\n\n' "$R" "$N" "$R" "$N" "$A" "$N"
 
-pkg_install() {  # pkg_install <apt> <dnf> <pacman> <zypper>
-  [ -n "$PM" ] || return 1
-  case "$PM" in
-    apt-get) sudo apt-get update -qq && sudo apt-get install -y $1 ;;
-    dnf)     sudo dnf install -y $2 ;;
-    pacman)  sudo pacman -S --needed --noconfirm $3 ;;
-    zypper)  sudo zypper --non-interactive install $4 ;;
-  esac
-}
+# ------------------------------------------------------------ system packages
+step "Checking Python, FFmpeg, Pandoc and Poppler"
+missing=()
+have python3 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 8))' || missing+=(python)
+have ffmpeg   || missing+=(ffmpeg)
+have pandoc   || missing+=(pandoc)
+have pdftoppm || missing+=(poppler)
 
-PYTHON=""
-for c in python3.13 python3.12 python3.11 python3.10 python3; do
-  if have "$c" && "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)' 2>/dev/null; then
-    PYTHON="$(command -v "$c")"; break
-  fi
-done
-if [ -z "$PYTHON" ]; then
-  info "Python 3.10+ not found."
-  if ask "Install Python with your package manager (sudo)?"; then
-    pkg_install "python3 python3-venv" "python3" "python" "python3" || true
-    have python3 && PYTHON="$(command -v python3)"
-  fi
-fi
-[ -n "$PYTHON" ] || { echo "error: Python 3.10 or newer is required." >&2; exit 1; }
-info "using $("$PYTHON" --version) at $PYTHON"
-
-if ! "$PYTHON" -c 'import venv, ensurepip' 2>/dev/null; then
-  info "The 'venv' module is missing."
-  if ask "Install python3-venv (sudo)?"; then
-    pkg_install "python3-venv" "python3" "python" "python3" || true
-  fi
-  "$PYTHON" -c 'import venv, ensurepip' 2>/dev/null || { echo "error: python venv/ensurepip unavailable." >&2; exit 1; }
-fi
-
-# -------------------------------------------------------------- system deps
-if [ "$SYSTEM_DEPS" = 1 ]; then
-  step "Checking FFmpeg, Pandoc and Poppler"
-  missing=()
-  have ffmpeg   || missing+=(ffmpeg)
-  have pandoc   || missing+=(pandoc)
-  have pdftoppm || missing+=(poppler)
-  if [ ${#missing[@]} -eq 0 ]; then
-    info "all present"
-  elif [ -z "$PM" ]; then
-    info "no supported package manager found; please install: ${missing[*]}"
-  elif ask "Install ${missing[*]} with $PM (needs sudo)?"; then
-    apt="" dnf="" pac="" zyp=""
-    for m in "${missing[@]}"; do
-      case "$m" in
-        ffmpeg) apt+=" ffmpeg"; dnf+=" ffmpeg-free"; pac+=" ffmpeg"; zyp+=" ffmpeg" ;;
-        pandoc) apt+=" pandoc"; dnf+=" pandoc"; pac+=" pandoc-cli"; zyp+=" pandoc" ;;
-        poppler) apt+=" poppler-utils"; dnf+=" poppler-utils"; pac+=" poppler"; zyp+=" poppler-tools" ;;
-      esac
-    done
-    pkg_install "$apt" "$dnf" "$pac" "$zyp" || info "some packages failed to install; run 'uswap --doctor' later."
+if [ ${#missing[@]} -eq 0 ]; then
+  info "everything is already installed"
+else
+  if   have apt-get; then pm=apt;    names=(python3 ffmpeg pandoc poppler-utils)
+  elif have dnf;     then pm=dnf;    names=(python3 ffmpeg-free pandoc poppler-utils)
+  elif have pacman;  then pm=pacman; names=(python ffmpeg pandoc-cli poppler)
+  elif have zypper;  then pm=zypper; names=(python3 ffmpeg pandoc poppler-tools)
+  else pm=""; fi
+  pkgs=()
+  for m in "${missing[@]}"; do
+    case "$m" in
+      python) pkgs+=("${names[0]}") ;; ffmpeg) pkgs+=("${names[1]}") ;;
+      pandoc) pkgs+=("${names[2]}") ;; poppler) pkgs+=("${names[3]}") ;;
+    esac
+  done
+  if [ -z "$pm" ]; then
+    info "no known package manager. Install these yourself: ${missing[*]}"
   else
-    info "skipped. Only images will work until you install: ${missing[*]}"
+    answer=y
+    if [ "$YES" = 0 ] && [ -t 0 ]; then
+      read -r -p "  Install ${pkgs[*]} with $pm (needs sudo)? [Y/n] " answer || true
+    fi
+    case "${answer:-y}" in
+      [nN]*) info "skipped: some formats will not work until you install ${pkgs[*]}" ;;
+      *) case "$pm" in
+           apt)    sudo apt-get update -qq && sudo apt-get install -y "${pkgs[@]}" ;;
+           dnf)    sudo dnf install -y "${pkgs[@]}" ;;
+           pacman) sudo pacman -S --needed --noconfirm "${pkgs[@]}" ;;
+           zypper) sudo zypper --non-interactive install "${pkgs[@]}" ;;
+         esac || info "some packages failed; run 'uswap --doctor' afterwards" ;;
+    esac
   fi
 fi
+have python3 || { echo "error: USwap needs Python 3.8 or newer." >&2; exit 1; }
 
-# -------------------------------------------------------------------- venv
+# ----------------------------------------------------------------- the program
 step "Installing USwap"
-mkdir -p "$APP_HOME" "$BIN_DIR"
-[ -x "$VENV/bin/python" ] || "$PYTHON" -m venv "$VENV"
-"$VENV/bin/python" -m pip install --quiet --upgrade pip
-"$VENV/bin/python" -m pip install --quiet --upgrade "$REPO_DIR"
-ln -sf "$VENV/bin/uswap" "$BIN_DIR/uswap"
-info "installed $("$BIN_DIR/uswap" --version) -> $BIN_DIR/uswap"
+mkdir -p "$APP" "$BIN" "$(dirname "$ICON")" "$(dirname "$DESKTOP")"
+install -m 755 "$REPO/uswap.py" "$APP/uswap.py"
+ln -sf "$APP/uswap.py" "$BIN/uswap"
+cp "$REPO/assets/logo.png" "$ICON"
+info "$("$APP/uswap.py" --version)  →  $BIN/uswap"
 
-# ------------------------------------------------------------------- menus
-if [ "$MENUS" = 1 ]; then
-  step "Adding the right-click menu entry"
-  PATH="$BIN_DIR:$PATH" "$REPO_DIR/scripts/menu-linux.sh"
+# File managers start programs without a terminal, so this opens one.
+cat > "$LAUNCHER" <<'EOF'
+#!/usr/bin/env bash
+USWAP="$(dirname "$(readlink -f "$0")")/uswap.py"
+for t in "${TERMINAL:-}" x-terminal-emulator gnome-terminal kgx ptyxis konsole xfce4-terminal \
+         mate-terminal tilix kitty alacritty foot wezterm lxterminal xterm; do
+  [ -n "$t" ] && command -v "$t" >/dev/null 2>&1 && break; t=""
+done
+[ -n "$t" ] || { notify-send "USwap" "No terminal emulator found" 2>/dev/null; exit 1; }
+case "$(basename "$t")" in
+  gnome-terminal|kgx|ptyxis|tilix) exec "$t" -- "$USWAP" "$@" ;;
+  xfce4-terminal|mate-terminal|lxterminal) exec "$t" -x "$USWAP" "$@" ;;
+  kitty|foot) exec "$t" "$USWAP" "$@" ;;
+  wezterm) exec "$t" start -- "$USWAP" "$@" ;;
+  *) exec "$t" -e "$USWAP" "$@" ;;
+esac
+EOF
+chmod 755 "$LAUNCHER"
+
+cat > "$DESKTOP" <<EOF
+[Desktop Entry]
+Type=Application
+Name=USwap
+Comment=Convert images, audio, video and documents
+Exec=$BIN/uswap %F
+Icon=uswap
+Terminal=true
+Categories=Utility;
+EOF
+
+# ------------------------------------------------------------ right-click menu
+step "Adding \"$LABEL\" to the right-click menu"
+found=0
+if have nautilus; then
+  mkdir -p "$(dirname "$NAUTILUS")"
+  cat > "$NAUTILUS" <<EOF
+#!/usr/bin/env bash
+mapfile -t files <<< "\${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS%$'\\n'}"
+exec "$LAUNCHER" "\${files[@]}"
+EOF
+  chmod 755 "$NAUTILUS"
+  info "Nautilus  →  right-click › Scripts › $LABEL"; found=1
 fi
+if have nemo; then
+  mkdir -p "$(dirname "$NEMO")"
+  printf '[Nemo Action]\nName=%s\nExec=%s %%F\nIcon-Name=uswap\nSelection=notnone\nExtensions=any;dir;\n' \
+    "$LABEL" "$LAUNCHER" > "$NEMO"
+  info "Nemo      →  right-click › $LABEL"; found=1
+fi
+if have dolphin; then
+  mkdir -p "$(dirname "$DOLPHIN")"
+  cat > "$DOLPHIN" <<EOF
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/octet-stream;inode/directory;
+Actions=uswap;
+X-KDE-Priority=TopLevel
 
-# -------------------------------------------------------------------- done
+[Desktop Action uswap]
+Name=$LABEL
+Icon=uswap
+Exec=$LAUNCHER %F
+EOF
+  chmod 755 "$DOLPHIN"
+  info "Dolphin   →  right-click › $LABEL"; found=1
+fi
+if have thunar; then
+  mkdir -p "$(dirname "$THUNAR")"
+  remove_thunar
+  block="<!-- uswap:begin -->
+<action><icon>uswap</icon><name>$LABEL</name><unique-id>uswap-2</unique-id>
+<command>$LAUNCHER %F</command><description>Convert with USwap</description><patterns>*</patterns>
+<audio-files/><image-files/><other-files/><text-files/><video-files/><directories/></action>
+<!-- uswap:end -->"
+  if [ -f "$THUNAR" ]; then
+    awk -v b="$block" '/<\/actions>/ && !d {print b; d=1} {print}' "$THUNAR" > "$THUNAR.tmp"
+    mv "$THUNAR.tmp" "$THUNAR"
+  else
+    printf '<?xml version="1.0" encoding="UTF-8"?>\n<actions>\n%s\n</actions>\n' "$block" > "$THUNAR"
+  fi
+  info "Thunar    →  right-click › $LABEL  (restart it: thunar -q)"; found=1
+fi
+[ "$found" = 1 ] || info "no supported file manager found; you can still use the uswap command"
+
+# ------------------------------------------------------------------------ done
 echo
 step "Done"
-"$BIN_DIR/uswap" --doctor || true
+"$BIN/uswap" --doctor || true
 case ":$PATH:" in
-  *":$BIN_DIR:"*) ;;
-  *) echo
-     info "$BIN_DIR is not in your PATH. Add this to ~/.bashrc or ~/.zshrc:"
-     info "    export PATH=\"\$HOME/.local/bin:\$PATH\""
-     ;;
+  *":$BIN:"*) ;;
+  *) echo; info "$BIN is not in your PATH. Add this line to ~/.bashrc and open a new terminal:"
+     printf '    %sexport PATH="$HOME/.local/bin:$PATH"%s\n' "$A" "$N" ;;
 esac
-info "Try it:  uswap      (or right-click a file > Convert with USwap)"
+echo
+info "try it:  uswap        (or right-click any file › $LABEL)"
+info "update:  git pull && ./install.sh"

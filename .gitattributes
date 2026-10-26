@@ -1,2 +1,12 @@
-# Auto detect text files and perform LF normalization
 * text=auto
+
+# must keep Unix line endings or they break on Linux
+*.sh     text eol=lf
+*.py     text eol=lf
+
+# Windows tools
+*.ps1    text eol=crlf
+*.iss    text eol=crlf
+
+*.png    binary
+*.ico    binary
