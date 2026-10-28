@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 # USwap installer for Linux
 #
-#   git clone https://github.com/UlisesSB/USwap.git && cd USwap && ./install.sh
+#   git clone https://github.com/UlisesSB/USwap.git && cd USwap && bash install.sh
 #
-# 1. installs Python 3, FFmpeg, Pandoc and Poppler with your package manager (sudo)
+# 1. installs Python 3 and FFmpeg with your package manager (sudo), if missing
 # 2. copies uswap to ~/.local/share/uswap and links the `uswap` command in ~/.local/bin
 # 3. adds "Convert with USwap" to the right-click menu (Nautilus, Nemo, Dolphin, Thunar)
 #
-# No pip, no virtualenv: USwap only uses the Python standard library.
+# Extra formats (documents, PDF, iPhone photos, Office) are optional add-ons:
+# open `uswap` and choose "Optional formats" whenever you want them.
 #
-#   ./install.sh              install or update
-#   ./install.sh -y           do not ask before installing system packages
-#   ./install.sh --uninstall  remove everything this script created
+#   bash install.sh              install or update
+#   bash install.sh -y           do not ask before installing system packages
+#   bash install.sh --uninstall  remove everything this script created
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 APP="$DATA/uswap"
 BIN="$HOME/.local/bin"
-LAUNCHER="$APP/open-in-terminal"
 ICON="$DATA/icons/hicolor/256x256/apps/uswap.png"
 DESKTOP="$DATA/applications/uswap.desktop"
 LABEL="Convert with USwap"
@@ -26,13 +26,14 @@ NAUTILUS="$DATA/nautilus/scripts/$LABEL"
 NEMO="$DATA/nemo/actions/uswap.nemo_action"
 DOLPHIN="$DATA/kio/servicemenus/uswap.desktop"
 THUNAR="${XDG_CONFIG_HOME:-$HOME/.config}/Thunar/uca.xml"
+RUN="$BIN/uswap --terminal"
 
 YES=0; UNINSTALL=0
 for arg in "$@"; do
   case "$arg" in
     -y|--yes) YES=1 ;;
     --uninstall) UNINSTALL=1 ;;
-    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $arg (try --help)" >&2; exit 2 ;;
   esac
 done
@@ -51,10 +52,10 @@ remove_thunar() {
 
 if [ "$UNINSTALL" = 1 ]; then
   step "Removing USwap"
-  rm -rf "$APP"
+  rm -rf "$APP"   # the program and its downloaded add-ons
   rm -f "$BIN/uswap" "$ICON" "$DESKTOP" "$NAUTILUS" "$NEMO" "$DOLPHIN"
   remove_thunar
-  info "done. FFmpeg, Pandoc and Poppler were left installed."
+  info "done. FFmpeg and add-ons installed with your package manager were left installed."
   exit 0
 fi
 
@@ -63,28 +64,28 @@ printf '%s  █  █ ▀▀▀▀▄%s    %sno pip, no virtualenv%s\n' "$R" "$N"
 printf '%s  ▀▄▄▀ ▄▄▄▄▀%s\n%s  ─────────►%s\n%s  ◄─────────%s\n\n' "$R" "$N" "$R" "$N" "$A" "$N"
 
 # ------------------------------------------------------------ system packages
-step "Checking Python, FFmpeg, Pandoc and Poppler"
+step "Checking Python and FFmpeg"
 missing=()
-have python3 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 8))' || missing+=(python)
-have ffmpeg   || missing+=(ffmpeg)
-have pandoc   || missing+=(pandoc)
-have pdftoppm || missing+=(poppler)
+have python3 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 8))' || missing+=(python3)
+have ffmpeg || missing+=(ffmpeg)
 
 if [ ${#missing[@]} -eq 0 ]; then
-  info "everything is already installed"
+  info "both are already installed"
 else
-  if   have apt-get; then pm=apt;    names=(python3 ffmpeg pandoc poppler-utils)
-  elif have dnf;     then pm=dnf;    names=(python3 ffmpeg-free pandoc poppler-utils)
-  elif have pacman;  then pm=pacman; names=(python ffmpeg pandoc-cli poppler)
-  elif have zypper;  then pm=zypper; names=(python3 ffmpeg pandoc poppler-tools)
+  if   have apt-get; then pm=apt;    cmd=(apt-get install -y)
+  elif have dnf;     then pm=dnf;    cmd=(dnf install -y)
+  elif have pacman;  then pm=pacman; cmd=(pacman -S --needed --noconfirm)
+  elif have zypper;  then pm=zypper; cmd=(zypper --non-interactive install)
   else pm=""; fi
   pkgs=()
   for m in "${missing[@]}"; do
-    case "$m" in
-      python) pkgs+=("${names[0]}") ;; ffmpeg) pkgs+=("${names[1]}") ;;
-      pandoc) pkgs+=("${names[2]}") ;; poppler) pkgs+=("${names[3]}") ;;
+    case "$pm:$m" in
+      pacman:python3) pkgs+=(python) ;;
+      dnf:ffmpeg) pkgs+=(ffmpeg-free) ;;
+      *) pkgs+=("$m") ;;
     esac
   done
+  SUDO=""; [ "$(id -u)" = 0 ] || SUDO=sudo
   if [ -z "$pm" ]; then
     info "no known package manager. Install these yourself: ${missing[*]}"
   else
@@ -93,17 +94,17 @@ else
       read -r -p "  Install ${pkgs[*]} with $pm (needs sudo)? [Y/n] " answer || true
     fi
     case "${answer:-y}" in
-      [nN]*) info "skipped: some formats will not work until you install ${pkgs[*]}" ;;
-      *) case "$pm" in
-           apt)    sudo apt-get update -qq && sudo apt-get install -y "${pkgs[@]}" ;;
-           dnf)    sudo dnf install -y "${pkgs[@]}" ;;
-           pacman) sudo pacman -S --needed --noconfirm "${pkgs[@]}" ;;
-           zypper) sudo zypper --non-interactive install "${pkgs[@]}" ;;
-         esac || info "some packages failed; run 'uswap --doctor' afterwards" ;;
+      [nN]*) info "skipped" ;;
+      *) [ "$pm" = apt ] && $SUDO apt-get update -qq || true
+         if ! $SUDO "${cmd[@]}" "${pkgs[@]}"; then
+           info "the package manager failed."
+           [ "$pm" = pacman ] && info "on Arch/CachyOS/Manjaro, update first and retry:  sudo pacman -Syu"
+         fi ;;
     esac
   fi
 fi
 have python3 || { echo "error: USwap needs Python 3.8 or newer." >&2; exit 1; }
+have ffmpeg || info "FFmpeg is still missing: install it, or almost nothing will convert"
 
 # ----------------------------------------------------------------- the program
 step "Installing USwap"
@@ -111,26 +112,9 @@ mkdir -p "$APP" "$BIN" "$(dirname "$ICON")" "$(dirname "$DESKTOP")"
 install -m 755 "$REPO/uswap.py" "$APP/uswap.py"
 ln -sf "$APP/uswap.py" "$BIN/uswap"
 cp "$REPO/assets/logo.png" "$ICON"
+printf '%s\n' "$REPO" > "$APP/source"   # lets `uswap --update` use git pull
+rm -f "$APP/open-in-terminal"           # leftover from 2.0
 info "$("$APP/uswap.py" --version)  →  $BIN/uswap"
-
-# File managers start programs without a terminal, so this opens one.
-cat > "$LAUNCHER" <<'EOF'
-#!/usr/bin/env bash
-USWAP="$(dirname "$(readlink -f "$0")")/uswap.py"
-for t in "${TERMINAL:-}" x-terminal-emulator gnome-terminal kgx ptyxis konsole xfce4-terminal \
-         mate-terminal tilix kitty alacritty foot wezterm lxterminal xterm; do
-  [ -n "$t" ] && command -v "$t" >/dev/null 2>&1 && break; t=""
-done
-[ -n "$t" ] || { notify-send "USwap" "No terminal emulator found" 2>/dev/null; exit 1; }
-case "$(basename "$t")" in
-  gnome-terminal|kgx|ptyxis|tilix) exec "$t" -- "$USWAP" "$@" ;;
-  xfce4-terminal|mate-terminal|lxterminal) exec "$t" -x "$USWAP" "$@" ;;
-  kitty|foot) exec "$t" "$USWAP" "$@" ;;
-  wezterm) exec "$t" start -- "$USWAP" "$@" ;;
-  *) exec "$t" -e "$USWAP" "$@" ;;
-esac
-EOF
-chmod 755 "$LAUNCHER"
 
 cat > "$DESKTOP" <<EOF
 [Desktop Entry]
@@ -151,7 +135,7 @@ if have nautilus; then
   cat > "$NAUTILUS" <<EOF
 #!/usr/bin/env bash
 mapfile -t files <<< "\${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS%$'\\n'}"
-exec "$LAUNCHER" "\${files[@]}"
+exec $RUN "\${files[@]}"
 EOF
   chmod 755 "$NAUTILUS"
   info "Nautilus  →  right-click › Scripts › $LABEL"; found=1
@@ -159,7 +143,7 @@ fi
 if have nemo; then
   mkdir -p "$(dirname "$NEMO")"
   printf '[Nemo Action]\nName=%s\nExec=%s %%F\nIcon-Name=uswap\nSelection=notnone\nExtensions=any;dir;\n' \
-    "$LABEL" "$LAUNCHER" > "$NEMO"
+    "$LABEL" "$RUN" > "$NEMO"
   info "Nemo      →  right-click › $LABEL"; found=1
 fi
 if have dolphin; then
@@ -175,7 +159,7 @@ X-KDE-Priority=TopLevel
 [Desktop Action uswap]
 Name=$LABEL
 Icon=uswap
-Exec=$LAUNCHER %F
+Exec=$RUN %F
 EOF
   chmod 755 "$DOLPHIN"
   info "Dolphin   →  right-click › $LABEL"; found=1
@@ -185,7 +169,7 @@ if have thunar; then
   remove_thunar
   block="<!-- uswap:begin -->
 <action><icon>uswap</icon><name>$LABEL</name><unique-id>uswap-2</unique-id>
-<command>$LAUNCHER %F</command><description>Convert with USwap</description><patterns>*</patterns>
+<command>$RUN %F</command><description>Convert with USwap</description><patterns>*</patterns>
 <audio-files/><image-files/><other-files/><text-files/><video-files/><directories/></action>
 <!-- uswap:end -->"
   if [ -f "$THUNAR" ]; then
@@ -208,5 +192,6 @@ case ":$PATH:" in
      printf '    %sexport PATH="$HOME/.local/bin:$PATH"%s\n' "$A" "$N" ;;
 esac
 echo
-info "try it:  uswap        (or right-click any file › $LABEL)"
-info "update:  git pull && ./install.sh"
+info "try it:   uswap        (or right-click any file › $LABEL)"
+info "more:     uswap › Optional formats   (documents, PDF, iPhone photos, Office)"
+info "update:   uswap --update"

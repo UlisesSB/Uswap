@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img alt="Versión" src="https://img.shields.io/badge/versión-2.0.0-E8323F">
+  <img alt="Versión" src="https://img.shields.io/badge/versión-2.1.0-E8323F">
   <img alt="Plataformas" src="https://img.shields.io/badge/Windows%20%7C%20Linux-17161B">
   <img alt="Python" src="https://img.shields.io/badge/python-3.8%2B-17161B">
   <img alt="Licencia" src="https://img.shields.io/badge/licencia-MIT-FFB547">
@@ -23,7 +23,7 @@
 Hacés clic derecho sobre un archivo, elegís **Convert with USwap**, se abre una terminal chiquita, tocás un número y listo: la copia convertida aparece al lado del original.
 
 ```text
-  █  █ ▄▀▀▀▀    USwap  v2.0.0
+  █  █ ▄▀▀▀▀    USwap  v2.1.0
   █  █ ▀▀▀▀▄    convert any file, right here
   ▀▄▄▀ ▄▄▄▄▀
   ─────────►
@@ -49,16 +49,17 @@ Hacés clic derecho sobre un archivo, elegís **Convert with USwap**, se abre un
 
 - **Detecta el tipo real del archivo.** Lee los primeros bytes en vez de confiar en la extensión: un PNG renombrado a `.jpg` se sigue tratando como PNG.
 - **Nunca pisa nada.** El original queda intacto. Si `foto.jpg` ya existe, guarda `foto (1).jpg`.
-- **Te muestra solo lo que tiene sentido.** Una foto ofrece formatos de imagen; un video ofrece video y también audio (para sacarle el sonido).
-- **Convierte carpetas enteras.** Clic derecho sobre una carpeta, o la opción *Convert a folder* del menú, y pasás todas las imágenes a WebP de una.
-- **Funciona sin conexión.** Todo pasa en tu computadora.
-- **Es un solo archivo.** `uswap.py` usa solo la biblioteca estándar de Python; el trabajo pesado lo hacen [FFmpeg](https://ffmpeg.org), [Pandoc](https://pandoc.org) y [Poppler](https://poppler.freedesktop.org).
+- **Te muestra solo lo que tiene sentido.** Una foto ofrece formatos de imagen y PDF; un video ofrece video y también audio (para sacarle el sonido).
+- **Convierte carpetas enteras.** Clic derecho sobre una carpeta, o *Convert a folder* en el menú, y pasás todas las imágenes a WebP de una, o las juntás en un solo PDF.
+- **Liviano por defecto.** La base solo necesita FFmpeg. Los formatos menos comunes son *complementos* que instalás desde el menú si los necesitás.
+- **Funciona sin conexión.** Todo pasa en tu computadora. Solo usa internet si instalás un complemento o una actualización.
+- **Es un solo archivo.** `uswap.py` usa solo la biblioteca estándar de Python.
 
 ## Instalación
 
 ### Windows
 
-Descargá **`USwap-Setup-2.0.0.exe`** desde [Releases](https://github.com/UlisesSB/USwap/releases/latest) y seguí el instalador. Ya trae FFmpeg, Pandoc y Poppler adentro, así que no tenés que instalar nada más. No pide permisos de administrador.
+Descargá **`USwap-Setup-2.1.0.exe`** desde [Releases](https://github.com/UlisesSB/USwap/releases/latest) y seguí el instalador. Ya trae FFmpeg, así que imágenes, audio y video funcionan desde el primer momento. No pide permisos de administrador.
 
 El instalador agrega:
 
@@ -76,40 +77,70 @@ bash install.sh
 
 El instalador:
 
-1. Instala Python 3, FFmpeg, Pandoc y Poppler con el gestor de paquetes de tu distro (`apt`, `dnf`, `pacman` o `zypper`). Te pregunta antes de usar `sudo`.
+1. Instala Python 3 y FFmpeg con el gestor de paquetes de tu distro (`apt`, `dnf`, `pacman` o `zypper`), si te faltan. Te pregunta antes de usar `sudo`.
 2. Copia USwap a `~/.local/share/uswap` y deja el comando `uswap` en `~/.local/bin`.
 3. Agrega **Convert with USwap** al clic derecho de Nautilus (en *Scripts*), Nemo, Dolphin y Thunar.
 
-No usa `pip` ni entornos virtuales, así que no se queda colgado bajando dependencias.
-
-Para actualizar: `git pull && bash install.sh`. Para desinstalar: `bash install.sh --uninstall`.
+No usa `pip` ni entornos virtuales. Para desinstalar: `bash install.sh --uninstall`.
 
 > **Fedora:** el paquete `ffmpeg-free` no trae H.264. Para convertir a MP4/MKV/MOV, instalá el `ffmpeg` completo desde [RPM Fusion](https://rpmfusion.org).
+
+## Formatos opcionales
+
+Abrí `uswap` y elegí **Optional formats**. Cada complemento se instala solo si lo elegís, y se puede quitar después.
+
+| Complemento | Qué agrega | De dónde sale |
+|---|---|---|
+| **Documents** | docx, odt, md, html, rtf, epub y txt entre sí | [Pandoc](https://pandoc.org), descarga directa |
+| **PDF reader** | pdf → txt, png, jpg (una imagen por página) | [Poppler](https://poppler.freedesktop.org) |
+| **Documents to PDF** | md, docx, html, epub… → pdf | [Typst](https://typst.app), descarga directa (usa Documents) |
+| **Extra images** | heic (fotos de iPhone), avif, svg → cualquier imagen o pdf | [ImageMagick](https://imagemagick.org) |
+| **Office to PDF** | docx, xlsx, pptx, odt… → pdf idéntico al original | [LibreOffice](https://libreoffice.org) (pesado) |
+
+Los de "descarga directa" se bajan de la página oficial de cada proyecto a la carpeta de USwap, sin permisos de administrador. Los demás usan el gestor de paquetes de Linux o `winget` en Windows. También se instalan desde la terminal: `uswap --install documents`.
+
+Si abrís un archivo que necesita un complemento que no tenés, USwap te dice cuál instalar.
 
 ## Uso
 
 | Cómo | Qué pasa |
 |---|---|
 | Clic derecho › **Convert with USwap** | Elegís el formato con un número y se convierte. |
-| `uswap` | Menú: convertir un archivo, convertir una carpeta, revisar herramientas. |
+| `uswap` | Menú: convertir un archivo o una carpeta, formatos opcionales, revisar herramientas. |
 | `uswap foto.png` | Lo mismo que el clic derecho, desde la terminal. |
 | `uswap foto.png --to webp` | Convierte directo, sin preguntar. |
-| `uswap *.wav --to mp3` | Varios archivos a la vez. |
+| `uswap *.jpg --to pdf --merge` | Junta varias imágenes en un solo PDF. |
 | `uswap Descargas/ --to jpg` | Todos los archivos compatibles de una carpeta. |
-| `uswap --doctor` | Muestra qué herramientas están instaladas. |
+| `uswap --install NOMBRE` | Instala un complemento (`documents`, `pdf`, `docpdf`, `images`, `office`). |
+| `uswap --doctor` | Muestra qué herramientas y complementos están instalados. |
 | `uswap --formats` | Lista los formatos soportados. |
+| `uswap --update` | Actualiza USwap, solo si confirmás. |
 
 **Teclas:** `↑ ↓` o `j k` para moverte, `1`–`9` para elegir directo, `Enter` para confirmar, `Esc` o `q` para volver.
 
 ## Formatos
 
-| Tipo | Entra | Sale | Motor |
+| Tipo | Entra | Sale | Necesita |
 |---|---|---|---|
-| Imagen | png, jpg, webp, gif, bmp, tiff, ico | las mismas | FFmpeg |
-| Audio | mp3, wav, flac, ogg, opus, m4a, aac | los mismos | FFmpeg |
-| Video | mp4, mkv, webm, mov, avi | mp4, mkv, webm, mov, avi, gif y cualquier formato de audio | FFmpeg |
-| Documento | docx, odt, rtf, epub, html, md, txt | los mismos | Pandoc |
-| PDF | pdf | txt, png, jpg (una imagen por página) | Poppler |
+| Imagen | png, jpg, webp, gif, bmp, tiff, ico | las mismas y pdf | — |
+| Imagen | heic, avif, svg | png, jpg, webp, gif, bmp, tiff, ico, pdf | Extra images |
+| Audio | mp3, wav, flac, ogg, opus, m4a, aac, wma, aiff, amr | mp3, wav, flac, ogg, opus, m4a, aac | — |
+| Video | mp4, mkv, webm, mov, avi, wmv, flv, 3gp, mpeg, ts | mp4, mkv, webm, mov, avi, gif y cualquier audio | — |
+| Documento | docx, odt, rtf, epub, html, md, txt | los mismos | Documents |
+| Documento | docx, odt, rtf, epub, html, md, txt | pdf | Documents to PDF |
+| Office | docx, doc, xlsx, xls, pptx, ppt, odt, ods, odp, rtf | pdf | Office to PDF |
+| PDF | pdf | txt, png, jpg | PDF reader |
+
+## Actualizaciones
+
+USwap revisa una vez por día si hay una versión nueva y, si la hay, muestra un aviso discreto (`▲ v2.2.0 available`) en el menú. No descarga ni cambia nada por su cuenta.
+
+Para actualizar, corré `uswap --update`, o elegí *Update* en el menú, y confirmá:
+
+- **Windows:** baja el instalador nuevo y lo abre.
+- **Linux (instalado con `git clone`):** hace `git pull` y vuelve a correr `install.sh`.
+
+Si no querés que revise nada, definí la variable de entorno `USWAP_NO_UPDATE_CHECK=1`.
 
 ## Apoyá el proyecto
 
@@ -123,4 +154,4 @@ Una estrella en GitHub o reportar un error también ayuda un montón.
 
 [MIT](LICENSE) © 2026 [Ulises Agustin Rodriguez](https://uarodriguez.com) · uarodriguez@computer.org
 
-Podés usarlo, modificarlo y redistribuirlo libremente, siempre que mantengas el aviso de copyright. Las herramientas que trae el instalador de Windows tienen sus propias licencias: ver [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Podés usarlo, modificarlo y redistribuirlo libremente, siempre que mantengas el aviso de copyright. FFmpeg (incluido en el instalador de Windows) y los complementos tienen sus propias licencias: ver [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

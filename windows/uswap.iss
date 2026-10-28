@@ -2,11 +2,15 @@
 ;
 ; Built by windows\build.ps1, which first prepares:
 ;   build\uswap\   uswap.exe made with PyInstaller (--onedir)
-;   build\tools\   ffmpeg, ffprobe, pandoc, pdftoppm, pdftotext (+ their DLLs)
+;   build\tools\   ffmpeg.exe and ffprobe.exe
+; Optional tools (Pandoc, Poppler, Typst, ImageMagick, LibreOffice) are not bundled:
+; USwap downloads them from "Optional formats" when the user asks.
 ;
 ; Manual build:  ISCC windows\uswap.iss
 
-#define AppVersion "2.0.0"
+#ifndef AppVersion
+  #define AppVersion "2.1.0"
+#endif
 
 [Setup]
 AppId={{B7D0F2C4-5A2E-4C6B-9A31-0A5F00000001}

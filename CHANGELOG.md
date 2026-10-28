@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.1.0] - 2026-10-28
+
+### Added
+- **Image to PDF**, built in with no extra tools: one PDF per image, or several images in
+  a single PDF (menu, or `uswap *.jpg --to pdf --merge`). Pages fit A4.
+- **Optional formats** (add-ons) in the menu, installed only if you want them:
+  Documents (Pandoc), PDF reader (Poppler), Documents to PDF (Typst),
+  Extra images: HEIC, AVIF, SVG (ImageMagick), Office to PDF (LibreOffice).
+  Also from the terminal: `uswap --install NAME`.
+- More formats that FFmpeg already reads: wma, aiff, amr, wmv, flv, 3gp, mpeg, ts.
+- Office files in: doc, xlsx, xls, ods, pptx, ppt, odp (to PDF, with LibreOffice).
+- New-version notice: a small `▲ vX.Y.Z available` line in the menu, checked at most
+  once a day. Turn it off with `USWAP_NO_UPDATE_CHECK=1`.
+- `uswap --update`: updates only after you confirm (Windows: runs the new installer;
+  Linux: `git pull` + `install.sh`).
+- When a file needs an add-on you don't have, USwap tells you which one.
+
+### Changed
+- The base install only needs Python and FFmpeg. Pandoc and Poppler are now optional,
+  which fixes installs that hung downloading Pandoc on Arch-based distros (CachyOS,
+  Manjaro...). On Linux, Pandoc and Typst are downloaded as official static builds.
+- The Windows installer only bundles FFmpeg, so it is much smaller.
+- `uswap --doctor` shows the right install command for your distro, not always `apt`.
+- Right-click menus on Linux call `uswap --terminal` (the separate launcher script is gone).
+
 ## [2.0.0] - 2026-10-26
 
 A full rewrite focused on being small, simple and easy to install.
